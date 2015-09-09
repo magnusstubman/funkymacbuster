@@ -1,0 +1,15 @@
+{
+  "name": "funkymacbuster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "dependencies": {
+    "mac-lookup": "^0.0.3",
+    "moment": "^2.10.6",
+    "pcap": "^2.0.1"
+  }
+}
