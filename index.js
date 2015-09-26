@@ -6,6 +6,8 @@ var pcap_session = pcap.createSession('', '');
 var whitelist = [
     'ff:ff:ff:ff:ff:ff'
 ];
+var seen = [];
+var seenSize = 100;
 
 // this call updates the definition from http://standards.ieee.org/develop/regauth/oui/oui.txt
 // comment this call out to run the tool totally passive
@@ -25,7 +27,7 @@ pcap_session.on('packet', function (raw_packet) {
         //var dhost = macArrToStr(packet.payload.dhost.addr);
 
         check(shost, packet);
-        //check(dhost);
+        //check(dhost); // are you a gateway or are you mitming? uncomment this line
     }
     catch (e) {
         console.log(e);
@@ -34,24 +36,49 @@ pcap_session.on('packet', function (raw_packet) {
 
 
 var check = function (addr, packet) {
-    var prefix = addr.substring(0,8);
+    if (!hasSeen(addr) && !whitelisted(addr)) {
+        var prefix = addr.substring(0,8);
 
-
-    if ((whitelist.indexOf(addr) == -1) && (whitelist.indexOf(prefix) == -1)) {
         mac.lookup(prefix, function (err, name) {
             if (err) throw err;
             if (name === null) {
-                var sip = getshostipv4(packet);
-
-                if (sip) {
-                    console.log(getTimestamp() + ' ' + addr + ' is unknown! (' + sip + ')');
-                } else {
-                    console.log(getTimestamp() + ' ' + addr + ' is unknown!');
-                }
-            } else {
-                //console.log(addr + ' is known: ' + name);
+                report(addr, packet);
             }
         });
+    }
+};
+
+var remember = function (addr) {
+    if (!hasSeen(addr)) {
+        seen.push(addr);
+    }
+
+    while (seen.length > seenSize) {
+        seen = seen.slice(1, seen.length);
+    }
+};
+
+var hasSeen = function (addr) {
+    return (seen.indexOf(addr) != -1);
+};
+
+var whitelisted = function (addr) {
+    var prefix = addr.substring(0,8);
+
+    return ((whitelist.indexOf(addr) != -1) || (whitelist.indexOf(prefix) != -1));
+};
+
+var report = function (addr, packet) {
+    if (!hasSeen(addr)) {
+        var sip = getshostipv4(packet);
+
+        if (sip) {
+            console.log(getTimestamp() + ' ' + addr + ' is unknown! (' + sip + ')');
+        } else {
+            console.log(getTimestamp() + ' ' + addr + ' is unknown!');
+        }
+
+        remember(addr);
     }
 };
 
