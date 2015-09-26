@@ -42,7 +42,9 @@ var check = function (addr, packet) {
         mac.lookup(prefix, function (err, name) {
             if (err) throw err;
             if (name === null) {
-                report(addr, packet);
+                reportUnknown(addr, packet);
+            } else {
+                reportKnown(addr, packet, name);
             }
         });
     }
@@ -68,7 +70,7 @@ var whitelisted = function (addr) {
     return ((whitelist.indexOf(addr) != -1) || (whitelist.indexOf(prefix) != -1));
 };
 
-var report = function (addr, packet) {
+var reportUnknown = function (addr, packet) {
     if (!hasSeen(addr)) {
         var sip = getshostipv4(packet);
 
@@ -76,6 +78,20 @@ var report = function (addr, packet) {
             console.log(getTimestamp() + ' ' + addr + ' is unknown! (' + sip + ')');
         } else {
             console.log(getTimestamp() + ' ' + addr + ' is unknown!');
+        }
+
+        remember(addr);
+    }
+};
+
+var reportKnown = function (addr, packet, name) {
+    if (!hasSeen(addr)) {
+        var sip = getshostipv4(packet);
+
+        if (sip) {
+            console.log(getTimestamp() + ' ' + addr + ' is known! (' + sip + ') ' + name);
+        } else {
+            console.log(getTimestamp() + ' ' + addr + ' is known! ' + name);
         }
 
         remember(addr);
